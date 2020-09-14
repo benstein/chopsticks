@@ -17,7 +17,7 @@ class Chopsticks
   attr_accessor :turns
   
   def initialize(player1, player2)
-    puts "Setting up a new game with #{player1.name} and #{player2.name}"
+    puts "Setting up a new game with #{player1.colored_name} and #{player2.colored_name}"
     self.player1 = player1
     self.player2 = player2
     self.turns = 0
@@ -38,15 +38,15 @@ class Chopsticks
     print_out_game
     player_a.take_turn(player_b)
     if player_b.both_hands_down?
-      print_win_message_for(player_a)
+      print_win_message_for(player_a, turns)
       game_over = true
     end
     game_over
   end
   
-  def print_win_message_for(player)
+  def print_win_message_for(player, turns)
     emoji = %w[❤️ 😀 ✅ 🍺].shuffle.last
-    puts "#{player.name} wins! #{emoji * 3}".upcase
+    puts "#{emoji * 3}  #{player.name} wins in #{turns} turns! #{emoji * 3}".upcase
   end
   
   def print_out_game
@@ -82,7 +82,6 @@ class Player
     name.__send__(color)
   end
 
-
   # ["r","l"] or ["2","3"]
   def get_move(opponent)
     puts "Getting move until we get a valid one..." if DEBUG
@@ -98,6 +97,7 @@ class Player
   end
 
   def take_turn(opponent)
+    
     source, target = get_move(opponent)
     
     if is_valid_letter?(source) && is_valid_letter?(target)
@@ -132,52 +132,60 @@ class Player
     move == L || move == R
   end
 
+  def print_error(string)
+    puts string.red
+  end
+
   def valid_move?(source, target, opponent)
     
+    #validate inputs
     if !is_valid_letter?(source) && !is_valid_number?(source)
-      puts "Sorry! Type 'L' or 'R' or a valid number for the first letter. Try again".red
+      print_error "Sorry! Type 'L' or 'R' or a valid number for the first letter. Try again"
       return false
     end
 
     if !is_valid_letter?(target) && !is_valid_number?(target)
-      puts "Sorry! Type 'L' or 'R' or a valid number for the second letter. Try again".red
+      print_error "Sorry! Type 'L' or 'R' or a valid number for the second letter. Try again"
       return false
     end
 
     if (is_valid_number?(source) && is_valid_letter?(target)) || (is_valid_number?(target) && is_valid_letter?(source))
-      puts "Sorry! You can't mix letters and numbers. Try again".red
-      return false
-    end
-        
-    if source == L && left.down?
-      puts "Sorry! Left hand is down. You can not tap with it. Try again".red
+      print_error "Sorry! You can't mix letters and numbers. Try again"
       return false
     end
 
-    if source == R && right.down?
-      puts "Sorry! Right hand is down. You can not tap with it. Try again".red
-      return false
-    end
+    #check for hands down
+    if is_valid_letter?(source) && is_valid_letter?(target)
+      if source == L && left.down?
+        print_error "Sorry! Left hand is down. You can not tap with it. Try again"
+        return false
+      end
+
+      if source == R && right.down?
+        print_error "Sorry! Right hand is down. You can not tap with it. Try again"
+        return false
+      end
     
-    if target == L && opponent.left.down?
-      puts "Sorry! Your opponent's left hand is down. You can not tap it. Try again".red
-      return false
-    end
+      if target == L && opponent.left.down?
+        print_error "Sorry! Your opponent's left hand is down. You can not tap it. Try again"
+        return false
+      end
 
-    if target == R && opponent.right.down?
-      puts "Sorry! Your opponent's right hand is down. You can not tap it. Try again".red
-      return false
+      if target == R && opponent.right.down?
+        print_error "Sorry! Your opponent's right hand is down. You can not tap it. Try again"
+        return false
+      end
     end
     
     #self tap validation
     if is_valid_number?(source) && is_valid_number?(target)
-      if (source.to_i + target.to_i) != (left.finger_count + right.finger_count)
-        puts "Sorry! You must enter digits that sum to your current total finger count of #{left.finger_count + right.finger_count}".red
+      if (source.to_i + target.to_i) != total_finger_count
+        print_error "Sorry! You must enter digits that sum to your current total finger count of #{left.finger_count + right.finger_count}"
         return false
       end
 
       if (source.to_i == left.finger_count) || (source.to_i == right.finger_count)
-        puts "Sorry! You may not keep your finger count the same. Try again".red
+        print_error "Sorry! You may not keep your finger count the same. Try again"
         return false
       end
     end
@@ -186,19 +194,56 @@ class Player
     
   end
 
+  def total_finger_count
+    left.finger_count + right.finger_count
+  end
+
+  def self_tap_ok?
+    total_finger_count > 1 && total_finger_count < 7
+  end
+
 end
 
-class ComputerPlayer < Player
+class RandomComputerPlayer < Player
+  
+  def print_error(string)
+    #don't print errors for the computer. they can't read! #puts string.red
+  end
   
   def get_move(opponent)
+
+    source, target = nil
     loop do
+
+      #computer brains!
       source = [L,R].shuffle.last
       target = [L,R].shuffle.last
+      random_self_tap_percentage = 0.33
+      if rand < random_self_tap_percentage && self_tap_ok?
+        puts "RANDOMLY SELF TAPPING with total_finger_count=#{total_finger_count}" if DEBUG
+        choices = case total_finger_count
+        when 2
+          [%w[2 0], %w[1 1]]
+        when 3
+          [%w[3 0], %w[2 1]]
+        when 4
+          [%w[4 0], %w[3 1], %w[2 2]]
+        when 5
+          [%w[4 1], %w[3 2]]
+        when 6
+          [%w[4 2], %w[3 3]]
+        else
+          raise "Unsupported total_finger_count #{total_finger_count}."
+        end
+        source, target = choices.shuffle.last
+      end
+
       break if valid_move?(source, target, opponent)
     end
-    puts "COMPUTER MOVE: #{source} => #{target}"
+#    puts "COMPUTER MOVE: #{source} => #{target}".green
     [source, target]
   end
+  
   
 end
 
@@ -287,10 +332,10 @@ class String
   end
 end
 
- player1 = HumanPlayer.new("Gabi", :light_blue)
- player2 = HumanPlayer.new("Zeke", :pink)
-# player1 = ComputerPlayer.new("Gabi", :light_blue)
-# player2 = ComputerPlayer.new("Zeke", :pink)
+ # player1 = HumanPlayer.new("Gabi", :light_blue)
+ # player2 = HumanPlayer.new("Zeke", :pink)
+player1 = RandomComputerPlayer.new("Gabi", :light_blue)
+player2 = RandomComputerPlayer.new("Zeke", :pink)
 players = [player1, player2].shuffle
 chopsticks = Chopsticks.new(players[0], players[1])
 chopsticks.play
