@@ -27,22 +27,21 @@ class Chopsticks
     puts "playing..." if DEBUG
     
     while true
-      self.turns = turns + 1
-      print_out_game
-      player1.take_turn(player2)
-      if player2.both_hands_down?
-        print_win_message_for(player1)
-        return
-      end
-      
-      self.turns = turns + 1
-      print_out_game
-      player2.take_turn(player1)
-      if player1.both_hands_down?
-        print_win_message_for(player2)
-        return
-      end
+      take_turn(player1, player2) and return
+      take_turn(player2, player1) and return
     end  
+  end
+  
+  def take_turn(player_a, player_b)
+    game_over = false
+    self.turns = turns + 1
+    print_out_game
+    player_a.take_turn(player_b)
+    if player_b.both_hands_down?
+      print_win_message_for(player_a)
+      game_over = true
+    end
+    game_over
   end
   
   def print_win_message_for(player)
@@ -89,9 +88,6 @@ class Player
     move = gets.strip.downcase
     [move[0], move[1]]
   end
-
-  # def parse_move(move)
-  # end
 
   def take_turn(opponent)
     puts "Getting move until we get a valid one..." if DEBUG
