@@ -52,9 +52,9 @@ class Chopsticks
   
   def print_out_game
     puts "========  TURN #{turns} ========"
-    puts "[#{player1.name}]: (L) #{player1.left.pretty_print} | #{player1.right.pretty_print}  (R)"
+    puts "[#{player1.colored_name}]: (L) #{player1.left.pretty_print} | #{player1.right.pretty_print}  (R)"
     puts "--------------------------------"
-    puts "[#{player2.name}]: (L) #{player2.left.pretty_print} | #{player2.right.pretty_print}  (R)"
+    puts "[#{player2.colored_name}]: (L) #{player2.left.pretty_print} | #{player2.right.pretty_print}  (R)"
     puts "==========================="
     puts ""
   end
@@ -64,11 +64,13 @@ end
 class Player
   
   attr_accessor :name
+  attr_accessor :color
   attr_accessor :left, :right
   
-  def initialize(name)
+  def initialize(name, color=:green)
     puts "Setting up a new player named #{name}" if DEBUG
     self.name = name
+    self.color = color
     self.left = Hand.new()
     self.right = Hand.new()
   end
@@ -77,22 +79,25 @@ class Player
     left.down? && right.down?
   end
 
-  #we coudl make more strategy here
-  def get_move
-    puts "[#{name}] Choose a hand to tap from (L or R) and to (L or R). Or type 2 numbers to self tap."
-    gets.strip.downcase
+  def colored_name
+    name.__send__(color)
   end
 
-  def take_turn(opponent)
-    # source = ""
-    # target = ""
+  #we coudl make more strategy here
+  def get_move
+    puts "[#{name.__send__(color)}] Choose a hand to tap from (L or R) and to (L or R). Or type 2 numbers to self tap."
+    move = gets.strip.downcase
+    [move[0], move[1]]
+  end
 
+  # def parse_move(move)
+  # end
+
+  def take_turn(opponent)
     puts "Getting move until we get a valid one..." if DEBUG
-    move = get_move
-    source, target = parse_move(move)
+    source, target = get_move
     while !valid_move?(source, target, opponent)
-      move = get_move
-      source, target = parse_move(move)
+      source, target = get_move
     end
     
     if is_valid_letter?(source) && is_valid_letter?(target)
@@ -130,59 +135,55 @@ class Player
   def valid_move?(source, target, opponent)
     
     if !is_valid_letter?(source) && !is_valid_number?(source)
-      puts "Sorry! Type 'L' or 'R' or a valid number for the first letter. Try again"
+      puts "Sorry! Type 'L' or 'R' or a valid number for the first letter. Try again".red
       return false
     end
 
     if !is_valid_letter?(target) && !is_valid_number?(target)
-      puts "Sorry! Type 'L' or 'R' or a valid number for the second letter. Try again"
+      puts "Sorry! Type 'L' or 'R' or a valid number for the second letter. Try again".red
       return false
     end
 
     if (is_valid_number?(source) && is_valid_letter?(target)) || (is_valid_number?(target) && is_valid_letter?(source))
-      puts "Sorry! You can't mix letters and numbers. Try again"
+      puts "Sorry! You can't mix letters and numbers. Try again".red
       return false
     end
         
     if source == L && left.down?
-      puts "Sorry! Left hand is down. You can not tap with it. Try again"
+      puts "Sorry! Left hand is down. You can not tap with it. Try again".red
       return false
     end
 
     if source == R && right.down?
-      puts "Sorry! Right hand is down. You can not tap with it. Try again"
+      puts "Sorry! Right hand is down. You can not tap with it. Try again".red
       return false
     end
     
     if target == L && opponent.left.down?
-      puts "Sorry! Your opponent's left hand is down. You can not tap it. Try again"
+      puts "Sorry! Your opponent's left hand is down. You can not tap it. Try again".red
       return false
     end
 
     if target == R && opponent.right.down?
-      puts "Sorry! Your opponent's right hand is down. You can not tap it. Try again"
+      puts "Sorry! Your opponent's right hand is down. You can not tap it. Try again".red
       return false
     end
     
     #self tap validation
     if is_valid_number?(source) && is_valid_number?(target)
-      if !(source.to_i + target.to_i) == (left.finger_count + right.finger_count)
-        puts "Sorry! You must enter digits that sum to your current total finger count of #{left.finger_count + right.finger_count}"
+      if (source.to_i + target.to_i) != (left.finger_count + right.finger_count)
+        puts "Sorry! You must enter digits that sum to your current total finger count of #{left.finger_count + right.finger_count}".red
         return false
       end
-#      if ((source.to_i == left.finger_count) && (target.to_i == right.finger_count)) || 
+
       if (source.to_i == left.finger_count) || (source.to_i == right.finger_count)
-        puts "Sorry! You may not keep your finger count the same. Try again"
+        puts "Sorry! You may not keep your finger count the same. Try again".red
         return false
       end
     end
     
     true
     
-  end
-
-  def parse_move(move)
-    [move[0], move[1]]
   end
 
 end
@@ -239,8 +240,38 @@ class Hand
 
 end
 
-player1 = Player.new("Gabi")
-player2 = Player.new("Zeke")
+class String
+  def colorize(color_code)
+    "\e[#{color_code}m#{self}\e[0m"
+  end
+
+  def red
+    colorize(31)
+  end
+
+  def green
+    colorize(32)
+  end
+
+  def yellow
+    colorize(33)
+  end
+
+  def blue
+    colorize(34)
+  end
+
+  def pink
+    colorize(35)
+  end
+
+  def light_blue
+    colorize(36)
+  end
+end
+
+player1 = Player.new("Gabi", :light_blue)
+player2 = Player.new("Zeke", :pink)
 players = [player1, player2].shuffle
 chopsticks = Chopsticks.new(players[0], players[1])
 chopsticks.play
