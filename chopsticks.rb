@@ -82,24 +82,28 @@ class Player
     name.__send__(color)
   end
 
-  #we coudl make more strategy here
-  def get_move
+
+  # ["r","l"] or ["2","3"]
+  def get_move(opponent)
+    puts "Getting move until we get a valid one..." if DEBUG
     puts "[#{name.__send__(color)}] Choose a hand to tap from (L or R) and to (L or R). Or type 2 numbers to self tap."
-    move = gets.strip.downcase
-    [move[0], move[1]]
+    source, target = nil
+    loop do
+      move = gets.strip.downcase
+      source = move[0]
+      target = move[1]
+      break if valid_move?(source, target, opponent)
+    end
+    [source, target]
   end
 
   def take_turn(opponent)
-    puts "Getting move until we get a valid one..." if DEBUG
-    source, target = get_move
-    while !valid_move?(source, target, opponent)
-      source, target = get_move
-    end
+    source, target = get_move(opponent)
     
     if is_valid_letter?(source) && is_valid_letter?(target)
-      puts "[#{name}] Tapping #{source.upcase} to your #{target.upcase}"
+      puts "[#{colored_name}] Tapping #{source.upcase} to your #{target.upcase}"
     else
-      puts "[#{name}] Self tap! Setting fingers to #{source} and #{target}"
+      puts "[#{colored_name}] Self tap! Setting fingers to #{source} and #{target}"
     end
 
     if source == L
@@ -184,6 +188,23 @@ class Player
 
 end
 
+class ComputerPlayer < Player
+  
+  def get_move(opponent)
+    loop do
+      source = [L,R].shuffle.last
+      target = [L,R].shuffle.last
+      break if valid_move?(source, target, opponent)
+    end
+    puts "COMPUTER MOVE: #{source} => #{target}"
+    [source, target]
+  end
+  
+end
+
+class HumanPlayer < Player
+end
+
 class Hand
   
   attr_accessor :finger_count
@@ -266,8 +287,10 @@ class String
   end
 end
 
-player1 = Player.new("Gabi", :light_blue)
-player2 = Player.new("Zeke", :pink)
+ player1 = HumanPlayer.new("Gabi", :light_blue)
+ player2 = HumanPlayer.new("Zeke", :pink)
+# player1 = ComputerPlayer.new("Gabi", :light_blue)
+# player2 = ComputerPlayer.new("Zeke", :pink)
 players = [player1, player2].shuffle
 chopsticks = Chopsticks.new(players[0], players[1])
 chopsticks.play
