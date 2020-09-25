@@ -88,7 +88,7 @@ class Player
     puts "[#{name.__send__(color)}] Choose a hand to tap from (L or R) and to (L or R). Or type 2 numbers to self tap."
     source, target = nil
     loop do
-      move = gets.strip.downcase
+      move = gets.strip.downcase #waits for human to type
       source = move[0]
       target = move[1]
       break if valid_move?(source, target, opponent)
@@ -204,12 +204,15 @@ class Player
 
 end
 
-class RandomComputerPlayer < Player
-  
+class ComputerPlayer < Player
   def print_error(string)
     #don't print errors for the computer. they can't read! #puts string.red
   end
-  
+end
+
+
+class RandomComputerPlayer < ComputerPlayer
+    
   def get_move(opponent)
 
     source, target = nil
@@ -246,6 +249,44 @@ class RandomComputerPlayer < Player
   
   
 end
+
+class SmartComputerPlayer < ComputerPlayer
+  
+  def get_move(opponent)
+#
+#     source, target = nil
+#     loop do
+#
+#       #computer brains!
+#       source = [L,R].shuffle.last
+#       target = [L,R].shuffle.last
+#       random_self_tap_percentage = 0.33
+#       if rand < random_self_tap_percentage && self_tap_ok?
+#         puts "RANDOMLY SELF TAPPING with total_finger_count=#{total_finger_count}" if DEBUG
+#         choices = case total_finger_count
+#         when 2
+#           [%w[2 0], %w[1 1]]
+#         when 3
+#           [%w[3 0], %w[2 1]]
+#         when 4
+#           [%w[4 0], %w[3 1], %w[2 2]]
+#         when 5
+#           [%w[4 1], %w[3 2]]
+#         when 6
+#           [%w[4 2], %w[3 3]]
+#         else
+#           raise "Unsupported total_finger_count #{total_finger_count}."
+#         end
+#         source, target = choices.shuffle.last
+#       end
+#
+#       break if valid_move?(source, target, opponent)
+#     end
+# #    puts "COMPUTER MOVE: #{source} => #{target}".green
+#     [source, target]
+  end
+end
+
 
 class HumanPlayer < Player
 end
