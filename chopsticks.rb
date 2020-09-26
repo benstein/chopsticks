@@ -275,12 +275,26 @@ class SmartComputerPlayer < ComputerPlayer
       puts "WE CAN MAKE A FIVE!!!" if DEBUG
       source = L
       target = R
+
+    #Rule: if you have a hand down, always self tap
+    elsif (left.down? || right.down?) && total_finger_count > 1
+      puts "WE HAVE A HAND DOWN. SELF TAP" if DEBUG
+      source, target = case total_finger_count
+      when 2 then %w[1 1]
+      when 3 then %w[2 1]
+      when 4
+        #don't make it easy for them to kill you
+        if opponent.left.finger_count == 3 || opponent.right.finger_count == 3 
+          %w[3 1]
+        else
+          %w[2 2]
+        end
+      end
+
+      #Rule: do not make a move if it will leave you vulnerable to losing a hand
+      #TODO
     end
     
-    #Rule: do not make a move if it will leave you vulnerable to losing a hand
-    # source, target = random_move(opponent)
-    # Hand.new_total_after_tap(left.finger_count, opponent.left.initialize)
-    # if source == L && target == L &&
     
     if source.nil? && target.nil?
       random_move(opponent)
