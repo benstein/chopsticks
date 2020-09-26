@@ -99,11 +99,16 @@ class Player
   def take_turn(opponent)
     
     source, target = get_move(opponent)
+    if !valid_move?(source, target, opponent)
+      raise "#{source}, #{target} is not a valid move. Check that get_move always returns a valid move"
+    end
     
     if is_valid_letter?(source) && is_valid_letter?(target)
-      puts "[#{colored_name}] Tapping #{source.upcase} to your #{target.upcase}"
+      puts " - #{colored_name}'s Move: Tapped #{source.upcase} to your #{target.upcase}"
+      puts ""
     else
-      puts "[#{colored_name}] Self tap! Setting fingers to #{source} and #{target}"
+      puts " - #{colored_name}'s Move: Self tap! Setting fingers to #{source} and #{target}"
+      puts ""
     end
 
     if source == L
@@ -308,31 +313,34 @@ class SmartComputerPlayer < ComputerPlayer
       safe_moves = []
       their_new_finger_count = Hand.new_total_after_tap(left.finger_count, opponent.left.finger_count)
       puts "their_new_finger_count after L, L would be #{their_new_finger_count}" if DEBUG
-      if !am_i_vulnerable?(their_new_finger_count, opponent.right.finger_count)
+      if !am_i_vulnerable?(their_new_finger_count, opponent.right.finger_count) && valid_move?(L, L, opponent)
         safe_moves << [L,L]
       end
 
       their_new_finger_count = Hand.new_total_after_tap(right.finger_count, opponent.left.finger_count)
       puts "their_new_finger_count after L, R would be #{their_new_finger_count}" if DEBUG
-      if !am_i_vulnerable?(their_new_finger_count, opponent.left.finger_count)
+      if !am_i_vulnerable?(their_new_finger_count, opponent.left.finger_count) && valid_move?(L, R, opponent)
         safe_moves << [L,R]
       end
 
       their_new_finger_count = Hand.new_total_after_tap(left.finger_count, opponent.right.finger_count)
       puts "their_new_finger_count after R, L would be #{their_new_finger_count}" if DEBUG
-      if !am_i_vulnerable?(their_new_finger_count, opponent.right.finger_count)
+      if !am_i_vulnerable?(their_new_finger_count, opponent.right.finger_count) && valid_move?(R, L, opponent)
         safe_moves << [R,L]
       end
 
       their_new_finger_count = Hand.new_total_after_tap(right.finger_count, opponent.right.finger_count)
       puts "their_new_finger_count after R, R would be #{their_new_finger_count}" if DEBUG
-      if !am_i_vulnerable?(their_new_finger_count, opponent.right.finger_count)
+      if !am_i_vulnerable?(their_new_finger_count, opponent.right.finger_count) && valid_move?(R, R, opponent)
         safe_moves << [R,R]
       end
       
-      if safe_moves.empty?
-        puts "NO SAFE MOVES. SELF TAPPING" if DEBUG
-        source, target = self_tap
+      if safe_moves.empty? 
+        if self_tap_ok?
+          puts "NO SAFE MOVES. SELF TAPPING" if DEBUG
+          source, target = self_tap
+          source, target = nil if !valid_move?(source, target, opponent) #kludge safety check
+        end
       else
         puts "SAFE CHOICES INCLUDE: #{safe_moves.inspect}. Picking a safe one at random" if DEBUG
         source, target = safe_moves.shuffle.last #this could be even smarter
@@ -419,37 +427,20 @@ class String
     "\e[#{color_code}m#{self}\e[0m"
   end
 
-  def red
-    colorize(31)
-  end
-
-  def green
-    colorize(32)
-  end
-
-  def yellow
-    colorize(33)
-  end
-
-  def blue
-    colorize(34)
-  end
-
-  def pink
-    colorize(35)
-  end
-
-  def light_blue
-    colorize(36)
-  end
+  def red; colorize(31); end
+  def green; colorize(32); end
+  def yellow; colorize(33); end
+  def blue; colorize(34); end
+  def pink; colorize(35); end
+  def light_blue; colorize(36); end
 end
 
 # player1 = HumanPlayer.new("Gabi", :light_blue)
-# player2 = HumanPlayer.new("Zeke", :pink)
+player2 = SmartComputerPlayer.new("Zeke", :pink)
 #player1 = RandomComputerPlayer.new("Gabi", :light_blue)
-player1 = SmartComputerPlayer.new( "Gabi (smart)", :light_blue)
+player1 = SmartComputerPlayer.new( "Gabi", :light_blue)
 #player2 = RandomComputerPlayer.new("Joe (dumb )", :pink)
-player2 = RandomComputerPlayer.new("Zeke (smart)", :pink)
+# player2 = SmartComputerPlayer.new("Zeke (smart)", :pink)
 players = [player1, player2].shuffle
 chopsticks = Chopsticks.new(players[0], players[1])
 chopsticks.play
