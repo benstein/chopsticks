@@ -335,7 +335,7 @@ class SmartComputerPlayer < ComputerPlayer
         source, target = self_tap
       else
         puts "SAFE CHOICES INCLUDE: #{safe_moves.inspect}. Picking a safe one at random" if DEBUG
-        source, target = safe_moves.shuffle.last
+        source, target = safe_moves.shuffle.last #this could be even smarter
       end
       
     end
@@ -447,8 +447,9 @@ end
 # player1 = HumanPlayer.new("Gabi", :light_blue)
 # player2 = HumanPlayer.new("Zeke", :pink)
 #player1 = RandomComputerPlayer.new("Gabi", :light_blue)
-player1 = SmartComputerPlayer.new( "Bob (smart)", :light_blue)
-player2 = RandomComputerPlayer.new("Joe (dumb )", :pink)
+player1 = SmartComputerPlayer.new( "Gabi (smart)", :light_blue)
+#player2 = RandomComputerPlayer.new("Joe (dumb )", :pink)
+player2 = RandomComputerPlayer.new("Zeke (smart)", :pink)
 players = [player1, player2].shuffle
 chopsticks = Chopsticks.new(players[0], players[1])
 chopsticks.play
