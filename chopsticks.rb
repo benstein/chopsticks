@@ -208,13 +208,8 @@ class ComputerPlayer < Player
   def print_error(string)
     #don't print errors for the computer. they can't read! #puts string.red
   end
-end
-
-
-class RandomComputerPlayer < ComputerPlayer
-    
-  def get_move(opponent)
-
+  
+  def random_move(opponent)
     source, target = nil
     loop do
 
@@ -246,45 +241,50 @@ class RandomComputerPlayer < ComputerPlayer
 #    puts "COMPUTER MOVE: #{source} => #{target}".green
     [source, target]
   end
-  
+end
+
+
+class RandomComputerPlayer < ComputerPlayer
+    
+  def get_move(opponent)
+    random_move opponent
+  end
   
 end
 
 class SmartComputerPlayer < ComputerPlayer
   
   def get_move(opponent)
-#
-#     source, target = nil
-#     loop do
-#
-#       #computer brains!
-#       source = [L,R].shuffle.last
-#       target = [L,R].shuffle.last
-#       random_self_tap_percentage = 0.33
-#       if rand < random_self_tap_percentage && self_tap_ok?
-#         puts "RANDOMLY SELF TAPPING with total_finger_count=#{total_finger_count}" if DEBUG
-#         choices = case total_finger_count
-#         when 2
-#           [%w[2 0], %w[1 1]]
-#         when 3
-#           [%w[3 0], %w[2 1]]
-#         when 4
-#           [%w[4 0], %w[3 1], %w[2 2]]
-#         when 5
-#           [%w[4 1], %w[3 2]]
-#         when 6
-#           [%w[4 2], %w[3 3]]
-#         else
-#           raise "Unsupported total_finger_count #{total_finger_count}."
-#         end
-#         source, target = choices.shuffle.last
-#       end
-#
-#       break if valid_move?(source, target, opponent)
-#     end
-# #    puts "COMPUTER MOVE: #{source} => #{target}".green
-#     [source, target]
+
+    source, target = nil
+    
+    #Rule: If we can ever tap to make a 5, do it!
+    if right.finger_count + opponent.right.finger_count == Hand::MAX_FINGERS
+      puts "WE CAN MAKE A FIVE!!!" if DEBUG
+      source = R
+      target = R
+    elsif right.finger_count + opponent.left.finger_count == Hand::MAX_FINGERS
+      puts "WE CAN MAKE A FIVE!!!" if DEBUG
+      source = R
+      target = L
+    elsif left.finger_count + opponent.left.finger_count == Hand::MAX_FINGERS
+      puts "WE CAN MAKE A FIVE!!!" if DEBUG
+      source = L
+      target = L
+    elsif left.finger_count + opponent.right.finger_count == Hand::MAX_FINGERS
+      puts "WE CAN MAKE A FIVE!!!" if DEBUG
+      source = L
+      target = R
+    end
+    
+    if source.nil? && target.nil?
+      random_move(opponent)
+    else
+      [source, target]
+    end
+    
   end
+  
 end
 
 
@@ -373,9 +373,10 @@ class String
   end
 end
 
- # player1 = HumanPlayer.new("Gabi", :light_blue)
- # player2 = HumanPlayer.new("Zeke", :pink)
-player1 = RandomComputerPlayer.new("Gabi", :light_blue)
+# player1 = HumanPlayer.new("Gabi", :light_blue)
+# player2 = HumanPlayer.new("Zeke", :pink)
+#player1 = RandomComputerPlayer.new("Gabi", :light_blue)
+player1 = SmartComputerPlayer.new("Gabi", :light_blue)
 player2 = RandomComputerPlayer.new("Zeke", :pink)
 players = [player1, player2].shuffle
 chopsticks = Chopsticks.new(players[0], players[1])
