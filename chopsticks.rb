@@ -209,6 +209,25 @@ class ComputerPlayer < Player
     #don't print errors for the computer. they can't read! #puts string.red
   end
   
+  def self_tap
+    puts "RANDOMLY SELF TAPPING with total_finger_count=#{total_finger_count}" if DEBUG
+    choices = case total_finger_count
+    when 2
+      [%w[2 0], %w[1 1]]
+    when 3
+      [%w[3 0], %w[2 1]]
+    when 4
+      [%w[4 0], %w[3 1], %w[2 2]]
+    when 5
+      [%w[4 1], %w[3 2]]
+    when 6
+      [%w[4 2], %w[3 3]]
+    else
+      raise "Unsupported total_finger_count #{total_finger_count}."
+    end
+    source, target = choices.shuffle.last
+  end
+  
   def random_move(opponent)
     source, target = nil
     loop do
@@ -218,22 +237,7 @@ class ComputerPlayer < Player
       target = [L,R].shuffle.last
       random_self_tap_percentage = 0.33
       if rand < random_self_tap_percentage && self_tap_ok?
-        puts "RANDOMLY SELF TAPPING with total_finger_count=#{total_finger_count}" if DEBUG
-        choices = case total_finger_count
-        when 2
-          [%w[2 0], %w[1 1]]
-        when 3
-          [%w[3 0], %w[2 1]]
-        when 4
-          [%w[4 0], %w[3 1], %w[2 2]]
-        when 5
-          [%w[4 1], %w[3 2]]
-        when 6
-          [%w[4 2], %w[3 3]]
-        else
-          raise "Unsupported total_finger_count #{total_finger_count}."
-        end
-        source, target = choices.shuffle.last
+        source, target = self_tap
       end
 
       break if valid_move?(source, target, opponent)
@@ -253,6 +257,13 @@ class RandomComputerPlayer < ComputerPlayer
 end
 
 class SmartComputerPlayer < ComputerPlayer
+  
+  def am_i_vulnerable?(count1, count2)
+    (left.finger_count + count1 == Hand::MAX_FINGERS) || 
+      (right.finger_count + count1 == Hand::MAX_FINGERS) ||
+        (left.finger_count + count2 == Hand::MAX_FINGERS) || 
+          (right.finger_count + count2 == Hand::MAX_FINGERS)
+  end
   
   def get_move(opponent)
 
@@ -290,12 +301,45 @@ class SmartComputerPlayer < ComputerPlayer
           %w[2 2]
         end
       end
-
-      #Rule: do not make a move if it will leave you vulnerable to losing a hand
-      #TODO
     end
     
-    
+    #Rule: do not make a move if it will leave you vulnerable to losing a hand
+    if source.nil? && target.nil?
+      safe_moves = []
+      their_new_finger_count = Hand.new_total_after_tap(left.finger_count, opponent.left.finger_count)
+      puts "their_new_finger_count after L, L would be #{their_new_finger_count}" if DEBUG
+      if !am_i_vulnerable?(their_new_finger_count, opponent.right.finger_count)
+        safe_moves << [L,L]
+      end
+
+      their_new_finger_count = Hand.new_total_after_tap(right.finger_count, opponent.left.finger_count)
+      puts "their_new_finger_count after L, R would be #{their_new_finger_count}" if DEBUG
+      if !am_i_vulnerable?(their_new_finger_count, opponent.left.finger_count)
+        safe_moves << [L,R]
+      end
+
+      their_new_finger_count = Hand.new_total_after_tap(left.finger_count, opponent.right.finger_count)
+      puts "their_new_finger_count after R, L would be #{their_new_finger_count}" if DEBUG
+      if !am_i_vulnerable?(their_new_finger_count, opponent.right.finger_count)
+        safe_moves << [R,L]
+      end
+
+      their_new_finger_count = Hand.new_total_after_tap(right.finger_count, opponent.right.finger_count)
+      puts "their_new_finger_count after R, R would be #{their_new_finger_count}" if DEBUG
+      if !am_i_vulnerable?(their_new_finger_count, opponent.right.finger_count)
+        safe_moves << [R,R]
+      end
+      
+      if safe_moves.empty?
+        puts "NO SAFE MOVES. SELF TAPPING" if DEBUG
+        source, target = self_tap
+      else
+        puts "SAFE CHOICES INCLUDE: #{safe_moves.inspect}. Picking a safe one at random" if DEBUG
+        source, target = safe_moves.shuffle.last
+      end
+      
+    end
+          
     if source.nil? && target.nil?
       random_move(opponent)
     else
@@ -303,6 +347,9 @@ class SmartComputerPlayer < ComputerPlayer
     end
     
   end
+  
+  
+
   
 end
 
@@ -400,8 +447,8 @@ end
 # player1 = HumanPlayer.new("Gabi", :light_blue)
 # player2 = HumanPlayer.new("Zeke", :pink)
 #player1 = RandomComputerPlayer.new("Gabi", :light_blue)
-player1 = SmartComputerPlayer.new("Gabi", :light_blue)
-player2 = RandomComputerPlayer.new("Zeke", :pink)
+player1 = SmartComputerPlayer.new( "Bob (smart)", :light_blue)
+player2 = RandomComputerPlayer.new("Joe (dumb )", :pink)
 players = [player1, player2].shuffle
 chopsticks = Chopsticks.new(players[0], players[1])
 chopsticks.play
