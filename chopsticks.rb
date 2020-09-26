@@ -277,6 +277,11 @@ class SmartComputerPlayer < ComputerPlayer
       target = R
     end
     
+    #Rule: do not make a move if it will leave you vulnerable to losing a hand
+    # source, target = random_move(opponent)
+    # Hand.new_total_after_tap(left.finger_count, opponent.left.initialize)
+    # if source == L && target == L &&
+    
     if source.nil? && target.nil?
       random_move(opponent)
     else
@@ -303,11 +308,16 @@ class Hand
   end
   
   def tapped_by!(hand)
-    self.finger_count = finger_count + hand.finger_count
+    self.finger_count = Hand.new_total_after_tap(finger_count, hand.finger_count)
+  end
+
+  def self.new_total_after_tap(finger_count_1, finger_count_2)
+    count = finger_count_1 + finger_count_2
     #this is the wrap-around logic
-    if finger_count >= MAX_FINGERS
-      self.finger_count = finger_count - MAX_FINGERS
+    if count >= MAX_FINGERS
+      count = count - MAX_FINGERS
     end
+    count
   end
 
   def set_finger_count!(number)
